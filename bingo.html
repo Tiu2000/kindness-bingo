@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kindness Bingo App</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --bg-color: #f0f8ff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        /* --- Print Controls UI --- */
+        .print-controls {
+            background-color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .print-controls input {
+            padding: 8px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        .print-btn {
+            background-color: #2196F3;
+            margin-top: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            max-width: 1200px;
+            justify-content: center;
+        }
+
+        /* --- Bingo Apparatus Styles --- */
+        .apparatus-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 320px;
+            height: fit-content;
+        }
+        .cage-wrapper {
+            position: relative;
+            width: 200px;
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        .cage {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: 
+                repeating-linear-gradient(45deg, transparent, transparent 15px, #ccc 15px, #ccc 20px),
+                repeating-linear-gradient(-45deg, transparent, transparent 15px, #ccc 15px, #ccc 20px);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 8px solid #555;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.1s linear;
+        }
+        .cage.spin {
+            animation: spinAnimation 0.5s linear infinite;
+        }
+        @keyframes spinAnimation {
+            100% { transform: rotate(360deg); }
+        }
+        .stand {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            width: 160px;
+            height: 100px;
+            border: 8px solid #444;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            z-index: 1;
+        }
+        .chute {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 40px;
+            background: #666;
+            border-radius: 0 0 10px 10px;
+            z-index: 3;
+        }
+        .drawn-ball-container {
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .drawn-ball {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.5) translateY(-100px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+        .drawn-ball.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        .drawn-ball img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+        .drawn-ball p {
+            margin: 0;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .reset-btn {
+            background-color: #f44336;
+        }
+
+        /* --- Master Board & Grid Styles --- */
+        .card-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .card-panel h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #333;
+        }
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            background-color: #333;
+            padding: 5px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 650px;
+        }
+        .bingo-header {
+            display: contents;
+        }
+        .bingo-header div {
+            background-color: var(--primary);
+            color: white;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .bingo-cell {
+            background-color: white;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+        }
+        .bingo-cell img {
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+        .bingo-cell span {
+            font-size: 10px;
+            line-height: 1.1;
+        }
+        .free-space {
+            background-color: #ffe0b2;
+            font-weight: bold;
+            font-size: 16px !important;
+            color: #d84315;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Master Board Tracker Specific Styles */
+        .master-cell {
+            opacity: 0.35;
+            filter: grayscale(100%);
+            transition: all 0.4s ease;
+        }
+        .master-cell.called {
+            opacity: 1;
+            filter: grayscale(0%);
+            background-color: #e8f5e9;
+            box-shadow: inset 0 0 15px rgba(76, 175, 80, 0.4);
+            border: 2px solid #4CAF50;
+            transform: scale(1.02);
+        }
+
+        /* --- Print Styles --- */
+        #printArea {
+            display: none;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; margin: 0; padding: 0; }
+            #printArea { display: block; width: 100%; }
+            .print-card {
+                page-break-after: always;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                box-sizing: border-box;
+                padding: 20px;
+            }
+            .print-card h1 { margin-bottom: 20px; font-size: 40px; }
+            .bingo-grid { max-width: 8in; border: 2px solid #000; }
+            .bingo-cell { border: 1px solid #000; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <h1>Kindness Bingo App</h1>
+        
+        <div class="print-controls">
+            <label for="printCount"><strong>Print student sheets:</strong></label>
+            <input type="number" id="printCount" value="20" min="1" max="100">
+            <span>cards</span>
+            <button class="print-btn" onclick="printBingoCards()">🖨️ Print Now</button>
+        </div>
+
+        <div class="container">
+            <div class="apparatus-panel">
+                <div class="cage-wrapper">
+                    <div class="cage" id="cage"></div>
+                    <div class="stand"></div>
+                    <div class="chute"></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="drawBtn" onclick="drawBall()">Roll Next Ball</button>
+                    <button id="resetBtn" class="reset-btn" onclick="resetGame()">Reset Game</button>
+                </div>
+                
+                <div style="margin-top: 15px; font-size: 15px; font-weight: bold; color: #555;" id="remainingText">24 items left</div>
+
+                <div class="drawn-ball-container">
+                    <div class="drawn-ball" id="drawnBall">
+                        <img id="ballImg" src="" alt="">
+                        <p id="ballText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <h2>Called Items Tracker</h2>
+                <div class="bingo-grid" id="masterGrid">
+                    <div class="bingo-header">
+                        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                    </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script>
+        const kindnessItems = [
+            { text: "Ask someone about their day", img: "image1.jpeg" },
+            { text: "Hold the door open", img: "image2.jpeg" },
+            { text: "Say please and thank you", img: "image3.jpeg" },
+            { text: "Help clean up without being asked", img: "image4.jpeg" },
+            { text: "Give someone a compliment", img: "image5.jpeg" },
+            { text: "Share a toy or snack", img: "image6.jpeg" },
+            { text: "Write a thank you note", img: "image7.jpeg" },
+            { text: "Pick up trash you see", img: "image8.jpeg" },
+            { text: "Include someone new in a game", img: "image9.jpeg" },
+            { text: "Make a handmade card", img: "image10.jpeg" },
+            { text: "Donate old clothes or toys", img: "image11.jpeg" },
+            { text: "Let someone else go first", img: "image12.jpeg" },
+            { text: "Smile at someone new", img: "image13.jpeg" },
+            { text: "Offer to help with chores", img: "image14.jpeg" },
+            { text: "Give a high five or hug", img: "image15.jpeg" },
+            { text: "Listen carefully to others", img: "image16.jpeg" },
+            { text: "Leave a kind note", img: "image17.jpeg" },
+            { text: "Say good morning", img: "image18.jpeg" },
+            { text: "Help a teacher", img: "image19.jpeg" },
+            { text: "Cheer someone up", img: "image20.jpeg" },
+            { text: "Forgive a mistake", img: "image21.jpeg" },
+            { text: "Teach someone something new", img: "image22.jpeg" },
+            { text: "Read a book to a younger child", img: "image23.jpeg" },
+            { text: "Use kind words", img: "image24.jpeg" }
+        ];
+
+        let remainingCageItems = [];
+        let drawnItemsList = []; // Keeps track of text of drawn items for memory
+
+        // --- Audio System (Synthesized sounds, no external files needed) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSpinSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 1.5);
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+        }
+
+        function playPopSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // --- Core Functions ---
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function loadMemory() {
+            const savedState = localStorage.getItem('bingoMemory');
+            if (savedState) {
+                drawnItemsList = JSON.parse(savedState);
+            } else {
+                drawnItemsList = [];
+            }
+            
+            // Rebuild remaining items by filtering out what has been drawn
+            remainingCageItems = kindnessItems.filter(item => !drawnItemsList.includes(item.text));
+            
+            document.getElementById('remainingText').innerText = `${remainingCageItems.length} items left`;
+            
+            // Show the last drawn ball if there is one
+            if (drawnItemsList.length > 0) {
+                const lastDrawnText = drawnItemsList[drawnItemsList.length - 1];
+                const lastDrawnItem = kindnessItems.find(item => item.text === lastDrawnText);
+                
+                if (lastDrawnItem) {
+                    const ball = document.getElementById('drawnBall');
+                    document.getElementById('ballImg').src = lastDrawnItem.img;
+                    document.getElementById('ballText').innerText = lastDrawnItem.text;
+                    ball.classList.add('show');
+                }
+            }
+        }
+
+        function resetGame() {
+            if (confirm("Are you sure you want to completely reset the game? This will clear all called items.")) {
+                localStorage.removeItem('bingoMemory');
+                window.location.reload(); // Refresh the page to reset everything visually
+            }
+        }
+
+        function initMasterBoard() {
+            const grid = document.getElementById('masterGrid');
+            let masterItems = [...kindnessItems];
+            
+            masterItems.splice(12, 0, { text: "FREE SPACE", img: "", isFree: true });
+
+            masterItems.forEach((item) => {
+                const cell = document.createElement('div');
+                cell.className = 'bingo-cell master-cell';
+                cell.dataset.itemName = item.text;
+                
+                if (item.isFree) {
+                    cell.innerHTML = '<span class="free-space" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">FREE<br>SPACE</span>';
+                    cell.classList.add('called');
+                } else {
+                    cell.innerHTML = `<img src="${item.img}" alt="Bingo Image"><br><span>${item.text}</span>`;
+                    
+                    // If this item was previously drawn and saved in memory, light it up
+                    if (drawnItemsList.includes(item.text)) {
+                        cell.classList.add('called');
+                    }
+                }
+                grid.appendChild(cell);
+            });
+        }
+
+        function drawBall() {
+            if (remainingCageItems.length === 0) {
+                alert("All balls have been drawn!");
+                return;
+            }
+
+            const drawBtn = document.getElementById('drawBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const cage = document.getElementById('cage');
+            const ball = document.getElementById('drawnBall');
+            
+            // UI States during spin
+            drawBtn.disabled = true;
+            resetBtn.disabled = true;
+            ball.classList.remove('show');
+            cage.classList.add('spin');
+            
+            playSpinSound(); // Start spin sound
+
+            setTimeout(() => {
+                cage.classList.remove('spin');
+                
+                // Pick an item
+                const randomIndex = Math.floor(Math.random() * remainingCageItems.length);
+                const pickedItem = remainingCageItems.splice(randomIndex, 1)[0];
+                
+                // Update Memory
+                drawnItemsList.push(pickedItem.text);
+                localStorage.setItem('bingoMemory', JSON.stringify(drawnItemsList));
+                
+                // Update UI
+                document.getElementById('remainingText').innerText = `${remainingCageItems.length} items left`;
+                document.getElementById('ballImg').src = pickedItem.img;
+                document.getElementById('ballText').innerText = pickedItem.text;
+
+                ball.classList.add('show');
+                playPopSound(); // Pop sound when ball appears
+                
+                // Light up the corresponding item on the Master Board
+                const masterCells = document.querySelectorAll('.master-cell');
+                masterCells.forEach(cell => {
+                    if (cell.dataset.itemName === pickedItem.text) {
+                        cell.classList.add('called');
+                    }
+                });
+
+                drawBtn.disabled = false;
+                resetBtn.disabled = false;
+            }, 1500);
+        }
+
+        // Generate and Print Student Cards
+        function printBingoCards() {
+            const printArea = document.getElementById('printArea');
+            const numCards = document.getElementById('printCount').value;
+            
+            printArea.innerHTML = ''; 
+            
+            for(let i = 0; i < numCards; i++) {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'print-card';
+                cardWrapper.innerHTML = '<h1>Kindness Bingo</h1>';
+                
+                const grid = document.createElement('div');
+                grid.className = 'bingo-grid';
+                grid.innerHTML = `
+                    <div class="bingo-header">
+                        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                    </div>`;
+                
+                let cardItems = shuffle([...kindnessItems]);
+                cardItems.splice(12, 0, { text: "FREE SPACE", img: "", isFree: true }); 
+
+                cardItems.forEach((item) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'bingo-cell';
+                    
+                    if (item.isFree) {
+                        cell.innerHTML = '<span class="free-space" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">FREE<br>SPACE</span>';
+                        cell.style.backgroundColor = '#ffe0b2'; 
+                    } else {
+                        cell.innerHTML = `<img src="${item.img}" alt="Bingo Image"><br><span>${item.text}</span>`;
+                    }
+                    grid.appendChild(cell);
+                });
+                
+                cardWrapper.appendChild(grid);
+                printArea.appendChild(cardWrapper);
+            }
+            
+            window.print();
+        }
+
+        // Initialize App
+        window.onload = () => {
+            loadMemory();
+            initMasterBoard();
+        };
+    </script>
+</body>
+</html>
